@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Church Member Registration</title>
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #5a3fef, #8f6af3);
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+      header {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        text-align: center;
+        padding: 20px 10px;
+        color: white;
+        font-size: 2rem;
+        letter-spacing: 2px;
+        font-weight: 600;
+      }
+      .container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        transition: all 0.4s ease;
+      }
+      .container:hover {
+        transform: scale(1.02);
+      }
+      h2 {
+        text-align: center;
+        color: #5a3fef;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 20px;
+      }
+      input,
+      select {
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+        transition: 0.3s;
+      }
+      input:focus,
+      select:focus {
+        border-color: #5a3fef;
+        box-shadow: 0 0 8px rgba(90, 63, 239, 0.3);
+        outline: none;
+      }
+      button {
+        background: #5a3fef;
+        color: white;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: 0.3s;
+      }
+      button:hover {
+        background: #3f2ccf;
+      }
+      table {
+        width: 100%;
+        margin-top: 25px;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      th {
+        background-color: #5a3fef;
+        color: white;
+      }
+      tr:hover {
+        background-color: #f3f3ff;
+      }
+      .empty {
+        text-align: center;
+        color: #aaa;
+        margin-top: 20px;
+      }
+      footer {
+        text-align: center;
+        margin-top: 50px;
+        color: white;
+        font-size: 0.9rem;
+      }
+      img.member-photo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+    </style>
+  </head>
+  <body>
+    <header>NSUMFA ASSEMBLY MEMBER REGISTRATION</header>
+
+    <div class="container">
+      <h2>Register New Member</h2>
+
+      <form id="registrationForm">
+        <input type="file" id="photo" accept="image/*" capture="camera" required />
+        <input type="text" id="surname" placeholder="Sur Name" required />
+        <input type="text" id="middlename" placeholder="Middle Name" required />
+        <input type="text" id="firstname" placeholder="First Name" required />
+        <input type="email" id="email" placeholder="Email Address" required />
+        <input type="date" id="dob" required />
+        <select id="gender" required>
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        <input type="text" id="phone" placeholder="Phone Number" required />
+        <input type="text" id="address" placeholder="Home Address" required />
+        <button type="submit">Register Member</button>
+      </form>
+
+      <h2>Registered Members</h2>
+      <table id="memberTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Photo</th>
+            <th>Sur Name</th>
+            <th>Middle Name</th>
+            <th>First Name</th>
+            <th>Email</th>
+            <th>DOB</th>
+            <th>Gender</th>
+            <th>Phone</th>
+            <th>Address</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="10" class="empty">No members registered yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>© 2025 FELIX OWUSU</footer>
+
+    <!-- ✅ Firebase SDKs -->
+    <script type="module">
+      // Import Firebase SDKs
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+      import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+      import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+
+      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+     const firebaseConfig = {
+     apiKey: "AIzaSyAQb8_AnWPgQIRjvPtRiiGPGAwuQZ8KijM",
+     authDomain: "church-registration-fb613.firebaseapp.com",
+     projectId: "church-registration-fb613",
+     messagingSenderId: "65951920459",
+     appId: "1:65951920459:web:d6bf27fd7ae951709938ce",
+      measurementId: "G-T2JJE3RGFJ"
+     };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const storage = getStorage(app);
+
+      const form = document.getElementById("registrationForm");
+      const tableBody = document.getElementById("tableBody");
+
+      // 🧩 Handle form submit
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const photoFile = document.getElementById("photo").files[0];
+        const surname = document.getElementById("surname").value;
+        const middlename = document.getElementById("middlename").value;
+        const firstname = document.getElementById("firstname").value;
+        const email = document.getElementById("email").value;
+        const dob = document.getElementById("dob").value;
+        const gender = document.getElementById("gender").value;
+        const phone = document.getElementById("phone").value;
+        const address = document.getElementById("address").value;
+
+        try {
+          // Upload photo to Firebase Storage
+          const storageRef = ref(storage, "memberPhotos/" + photoFile.name);
+          await uploadBytes(storageRef, photoFile);
+          const photoURL = await getDownloadURL(storageRef);
+
+          // Save member details to Firestore
+          await addDoc(collection(db, "members"), {
+            photoURL,
+            surname,
+            middlename,
+            firstname,
+            email,
+            dob,
+            gender,
+            phone,
+            address,
+            createdAt: new Date().toISOString(),
+          });
+
+          alert("✅ Member registered successfully!");
+          form.reset();
+          loadMembers();
+        } catch (error) {
+          console.error("Error adding member:", error);
+          alert("❌ Failed to register member. Check console for details.");
+        }
+      });
+
+      // 📋 Load members from Firestore
+      async function loadMembers() {
+        tableBody.innerHTML = "";
+        const snapshot = await getDocs(collection(db, "members"));
+        let i = 1;
+        snapshot.forEach((doc) => {
+          const m = doc.data();
+          const row = `<tr>
+            <td>${i++}</td>
+            <td><img src="${m.photoURL}" class="member-photo" alt="Photo"></td>
+            <td>${m.surname}</td>
+            <td>${m.middlename}</td>
+            <td>${m.firstname}</td>
+            <td>${m.email}</td>
+            <td>${m.dob}</td>
+            <td>${m.gender}</td>
+            <td>${m.phone}</td>
+            <td>${m.address}</td>
+          </tr>`;
+          tableBody.innerHTML += row;
+        });
+        if (i === 1) {
+          tableBody.innerHTML = `<tr><td colspan="10" class="empty">No members registered yet.</td></tr>`;
+        }
+      }
+
+      // Load on start
+      loadMembers();
+    </script>
+  </body>
+</html>
